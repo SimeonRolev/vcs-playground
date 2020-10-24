@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, getQueriesForElement, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, getQueriesForElement, waitFor, wait, getAllByTitle } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TagsInput from './TagsInput';
 
@@ -77,6 +77,7 @@ describe('Add tag', () => {
         setupTags()
         const input = getInput();
         userEvent.type(input, 'example{enter}');
+        expect(queryTagByText('example')).toBeInTheDocument()
         expect(input.value).toBe('');
     })
     
@@ -275,7 +276,156 @@ describe('Callbacks', () => {
         )
 
         expect(onChangeDefault).toBeCalledTimes(2);
+    })    
+})
+
+function assertTagsOrder(properOrder) {
+    const allTags = screen.queryAllByRole('listitem');
+    expect(allTags.length).toBe(properOrder.length)
+
+    allTags.forEach((tag, index) => {
+        const firstElem = getTagByText(properOrder[index]);
+        expect(tag).toStrictEqual(firstElem);
     })
+}
+
+describe('Arrow navigation', () => {
+
+    describe('Arrow left', () => {
+
+        test('moves input one step at a time (to the left) if input is empty', () => {
+            setupTags(['first', 'third']);
+
+            const input = getInput();
+            userEvent.type(input, 'fourth{enter}');
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            userEvent.type(input, 'second{enter}');
     
+            const properOrder = ['first', 'second', 'third', 'fourth']
+            assertTagsOrder(properOrder)
+        })
+
+        test('doesnt move input if input is not empty', () => {
+            setupTags(['first']);
+
+            const input = getInput();
+            userEvent.type(input, 'second');
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            userEvent.type(input, '{enter}');
     
+            const properOrder = ['first', 'second']
+            assertTagsOrder(properOrder)
+            
+        })
+
+        test('spamming the arrow doesnt break the input, adds to beginning', () => {
+            setupTags(['first', 'second']);
+
+            const input = getInput();
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            userEvent.type(input, 'zero{enter}');
+    
+            const properOrder = ['zero', 'first', 'second']
+            assertTagsOrder(properOrder)
+        })
+    })
+
+    describe('Arrow right', () => {
+
+        test('moves input one step at a time (to the right) if input is empty', () => {
+            setupTags(['first', 'third']);
+
+            const input = getInput();
+            // Move to beginning
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            fireEvent.keyDown(input, { key: 'ArrowRight' });
+            userEvent.type(input, 'second{enter}');
+            fireEvent.keyDown(input, { key: 'ArrowRight' });
+            userEvent.type(input, 'fourth{enter}');
+    
+            const properOrder = ['first', 'second', 'third', 'fourth']
+            assertTagsOrder(properOrder)
+        })
+
+        test('doesnt move input if input is not empty', () => {
+            setupTags(['first']);
+
+            const input = getInput();
+            // Move to beginning
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            userEvent.type(input, 'second');
+            fireEvent.keyDown(input, { key: 'ArrowRight' });
+            fireEvent.keyDown(input, { key: 'ArrowRight' });
+            userEvent.type(input, '{enter}');
+    
+            const properOrder = ['second', 'first']
+            assertTagsOrder(properOrder)
+            
+        })
+
+        test('spamming the arrow doesnt break the input, adds to end', () => {
+            setupTags(['first', 'second']);
+
+            const input = getInput();
+            // Move to beginning
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            fireEvent.keyDown(input, { key: 'ArrowLeft' });
+            fireEvent.keyDown(input, { key: 'ArrowRight' });
+            fireEvent.keyDown(input, { key: 'ArrowRight' });
+            fireEvent.keyDown(input, { key: 'ArrowRight' });
+            fireEvent.keyDown(input, { key: 'ArrowRight' });
+            fireEvent.keyDown(input, { key: 'ArrowRight' });
+            userEvent.type(input, 'last{enter}');
+    
+            const properOrder = ['first', 'second', 'last']
+            assertTagsOrder(properOrder)
+        })
+    })
+
+    test('Backspace deletes the tag behind the input if input is empty', () => {
+        setupTags(['first', 'del1', 'second', 'del2']);
+
+        const input = getInput();
+        fireEvent.keyDown(input, { key: 'ArrowLeft' });
+        fireEvent.keyDown(input, { key: 'ArrowLeft' });
+        fireEvent.keyDown(input, { key: 'Backspace' });
+        assertTagsOrder(['first', 'second', 'del2'])
+
+        fireEvent.keyDown(input, { key: 'ArrowRight' });
+        fireEvent.keyDown(input, { key: 'ArrowRight' });
+        fireEvent.keyDown(input, { key: 'Backspace' });
+        assertTagsOrder(['first', 'second'])
+
+        fireEvent.keyDown(input, { key: 'Backspace' });
+        assertTagsOrder(['first'])
+
+        // Move to beginning - Backspace should not work
+        fireEvent.keyDown(input, { key: 'ArrowLeft' });
+        fireEvent.keyDown(input, { key: 'Backspace' });
+        assertTagsOrder(['first'])
+
+        userEvent.type(input, 'zero{enter}');
+
+        const properOrder = ['zero', 'first']
+        assertTagsOrder(properOrder)
+    })
+
+    test('Backspace doesnt delete items if input is not empty', () => {
+        setupTags(['first']);
+
+        const input = getInput();
+        userEvent.type(input, 'del{backspace}{backspace}{backspace}');
+        assertTagsOrder(['first'])
+        userEvent.type(input, '{backspace}');
+        
+        assertTagsOrder([])
+    })
 })

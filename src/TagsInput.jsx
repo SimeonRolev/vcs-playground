@@ -34,14 +34,54 @@ function CategorizedTag (text, category) {
     this.category = category;
 }
 
-function tagsReducer(state, action) {
+function insertBeforeIndex(array, index, elem) {
+    return [...array.slice(0, index), elem, ...array.slice(index)]
+}
+
+function removeBeforeIndex(array, index) {
+    if (index < 1) {
+        throw new Error('Tried to remove index lower than 0.')
+    }
+    return [...array.slice(0, index - 1), ...array.slice(index)]
+}
+
+function swapWithPreviousIndex(array, index) {
+    [array[index - 1], array[index]] = [array[index], array[index - 1]]
+    return array
+}
+
+const tagsReducer = function (state, action) {
+    const inputIndex = state.indexOf('_INPUT')
+    const stateCopy = [...state];
+
+    if (new Set(state).size !== state.length) {
+        throw new Error('State has duplicated elements')
+    }
+
     switch (action.type) {
-      case 'add':
-        return [...state, action.tag];
-      case 'remove':
-        return state.filter(tag => tag.text !== action.tag.text)
-      default:
-        throw new Error();
+        case 'add':
+            return insertBeforeIndex(state, inputIndex, action.tag)
+        case 'remove':
+            // Clicked X on some of the tags
+            if (action.tag) {
+                return removeBeforeIndex(stateCopy, stateCopy.indexOf(action.tag) + 1)
+            } else {
+                // Backspace
+                if (inputIndex > 0) {
+                    return removeBeforeIndex(stateCopy, inputIndex)
+                }
+            }
+            return state
+        case 'arrowLeft':
+            return inputIndex > 0
+                ? swapWithPreviousIndex(stateCopy, inputIndex)
+                : state
+        case 'arrowRight':
+            return inputIndex < state.length - 1
+                ? swapWithPreviousIndex(stateCopy, inputIndex + 1)
+                : state
+        default:
+            throw new Error();
     }
 }
 
@@ -52,7 +92,7 @@ function TagsInput ({
     categories=[],
     tagComponent=DefaultTag
 }) {
-    const [tags, dispatch] = useReducer(tagsReducer, [])
+    const [tags, dispatch] = useReducer(tagsReducer, ['_INPUT'])
     const [currentInput, setCurrentInput] = useState('');
 
     const [inputRef, setInputFocus] = useFocus();
@@ -94,8 +134,8 @@ function TagsInput ({
                 type: 'add',
                 tag: categorizeTag(text)
             });
+            setCurrentInput('');
         }
-        setCurrentInput('');
     }
 
     const onInputChange = e => {
@@ -109,16 +149,27 @@ function TagsInput ({
         addTag(e.target.value);
     }
 
-    const onInputKeyPress = e => {
+    const onInputKeyDown = e => {
         if (separators.indexOf(e.key) > -1) {
             addTag(e.target.value);
         }
         else if (
             e.key === 'Backspace' &&
-            currentInput === '' &&
-            tags.length > 0
+            currentInput === ''
         ) {
-            removeTag(tags.pop());
+            removeTag();
+        }
+        else if (
+            e.key === 'ArrowLeft' &&
+            currentInput === ''
+        ) {
+            dispatch({type: 'arrowLeft'})
+        }
+        else if (
+            e.key === 'ArrowRight' &&
+            currentInput === ''
+        ) {
+            dispatch({type: 'arrowRight'})
         }
     }
 
@@ -131,19 +182,23 @@ function TagsInput ({
             role='list'
             className='tagsinput__wrapper'
         >
-            { tags.map(tag => <TagComponent
-                key={tag.text}
-                tag={tag}
-                onRemove={onRemoveTag(tag)}
-            />) }
-            <input
-                ref={inputRef}
-                onKeyDown={onInputKeyPress}
-                onChange={onInputChange}
-                onBlur={onBlur}
-                value={currentInput}
-                aria-label='insert tag'
-            />
+            {tags.map(tag => {
+                return tag === '_INPUT'
+                ? <input
+                    key={`tagsinpout__input`}
+                    ref={inputRef}
+                    onKeyDown={onInputKeyDown}
+                    onChange={onInputChange}
+                    onBlur={onBlur}
+                    value={currentInput}
+                    aria-label='insert tag'
+                />
+                : <TagComponent
+                    key={tag.text}
+                    tag={tag}
+                    onRemove={onRemoveTag(tag)}
+                />
+            })}
         </div>
     )
 }

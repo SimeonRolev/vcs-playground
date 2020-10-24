@@ -11,3 +11,19 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.tagsinput__wrapper {
+  border: 1px solid grey;
+  display: flex;
+}
+
+.tagsinput__tag {
+  border: 1px solid grey;
+  text-align: center;
+  vertical-align: center;
+  margin: 2px;
+}
+
+.tagsinput__tag {
+  
+}
