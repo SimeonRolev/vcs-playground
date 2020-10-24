@@ -21,11 +21,14 @@ function queryCloseButtonForTag (tagText) {
     return tagQueries.getByRole('button', { name: 'Remove' } );
 }
 
-
 const onChangeDefault = jest.fn(items => {})
 
-function setupTags(initialTags=[], onChange=onChangeDefault) {
-    return render(<TagsInput onChange={onChange} initialTags={initialTags} />)
+function setupTags(initialTags=[], overrideProps={}) {
+    const props = Object.assign({
+        onChange: onChangeDefault,
+        initialTags
+    }, overrideProps)
+    return render(<TagsInput {...props} />)
 }
 
 describe('Add tag', () => {
@@ -36,26 +39,9 @@ describe('Add tag', () => {
         userEvent.type(input, 'example{enter}');
         getTagByText('example');
     });
-
-    test('clears input on add', () => {
-        setupTags()
-        const input = getInput();
-        userEvent.type(input, 'example{enter}');
-        expect(input.value).toBe('');
-    })
-    
-    test('cannot add empty tag', () => {
-        setupTags()
-        const input = getInput();
-        userEvent.type(input, '{enter}');
-        expect(screen.queryAllByRole('listitem')).toHaveLength(0);
         
-        userEvent.type(input, 'aa{backspace}{backspace}{enter}');
-        expect(screen.queryAllByRole('listitem')).toHaveLength(0);
-    });
-    
     test('adds tag on custom separator', () => {
-        render(<TagsInput onChange={() => {}} separators={['Z', '|']} />);
+        setupTags([], { separators: ['Z', '|'] })
         const input = getInput();
         userEvent.type(input, 'firstZ');
         getTagByText('first');
@@ -78,6 +64,31 @@ describe('Add tag', () => {
         getTagByText('first')
         getTagByText('second')
     });
+
+    test('clears input on add', () => {
+        setupTags()
+        const input = getInput();
+        userEvent.type(input, 'example{enter}');
+        expect(input.value).toBe('');
+    })
+    
+    test('cannot add empty tag', () => {
+        setupTags()
+        const input = getInput();
+        userEvent.type(input, '{enter}');
+        expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+        
+        userEvent.type(input, 'aa{backspace}{backspace}{enter}');
+        expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+    });
+
+    test('cannot add duplicate tag', () => {
+        setupTags(['first'])
+        const input = getInput();
+        userEvent.type(input, 'first{enter}');
+        expect(screen.queryAllByRole('listitem')).toHaveLength(1);
+        getTagByText('first');
+    })
 })
 
 describe('Remove tag', () => {
@@ -118,9 +129,9 @@ test('focus input on click', () => {
     expect(input).toHaveFocus();
 });
 
-// test('removes tag on clicking x', () => {throw Error('not implemented');});
-// test('loads category styles properly', () => {throw Error('not implemented');});
-// test('calls onChange on add/delete tag', () => {throw Error('not implemented');});
-// test('backspace deletes prev item if input is empty', () => {throw Error('not implemented');});
-// test('categorizing', () => {throw Error('not implemented');});
+describe('Categorizing tags', () => {
+    
+})
 
+// test('calls onChange on add/delete tag', () => {throw Error('not implemented');});
+// test('categorizing', () => {throw Error('not implemented');});
