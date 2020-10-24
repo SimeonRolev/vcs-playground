@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react'
+import React, {useState, useEffect, useReducer} from 'react'
 import PropTypes from 'prop-types'
 import { useFocus } from './hooks';
 
@@ -29,20 +29,31 @@ function CategorizedTag (text, category) {
     this.category = category;
 }
 
+function tagsReducer(state, action) {
+    switch (action.type) {
+      case 'add':
+        return [...state, action.tag];
+      case 'remove':
+        return state.filter(tag => tag.text !== action.tag.text)
+      default:
+        throw new Error();
+    }
+}
+
 function TagsInput ({
     onChange,
     initialTags=[],
     separators=['Enter', ',', ';'],
     categories=[]
 }) {
-    const [tags, setTags] = useState(initialTags)
+    const [tags, dispatch] = useReducer(tagsReducer, [])
     const [currentInput, setCurrentInput] = useState('');
 
     const [inputRef, setInputFocus] = useFocus();
 
     useEffect(() => {
         initialTags.forEach(i => addTag(i))
-    }, [initialTags]);  // eslint-disable-line
+    }, []);
 
     useEffect(() => {
         onChange(tags)
@@ -57,12 +68,21 @@ function TagsInput ({
     }
 
     const removeTag = (text) => {
-        setTags(tags.filter(tag => tag.text !== text))
+        dispatch({
+            type: 'remove',
+            text
+        });
     }
 
     const addTag = (text) => {
-        if (!tags.find(tag => tag.text === text)) {
-            setTags([...tags, categorizeTag(text)]);
+        if (
+            !tags.find(tag => tag.text === text) &&
+            !!text
+        ) {
+            dispatch({
+                type: 'add',
+                tag: categorizeTag(text)
+            });
         }
         setCurrentInput('');
     }
@@ -87,7 +107,7 @@ function TagsInput ({
             currentInput === '' &&
             tags.length > 0
         ) {
-            removeTag(tags.pop().text);
+            removeTag(tags.pop());
         }
     }
 
@@ -103,7 +123,7 @@ function TagsInput ({
             />) }
             <input
                 ref={inputRef}
-                onKeyPress={onInputKeyPress}
+                onKeyDown={onInputKeyPress}
                 onChange={onInputChange}
                 onBlur={onBlur}
                 value={currentInput}

@@ -6,7 +6,8 @@ function App() {
   return (
     <div className="App">
 
-      <TagsInput              
+      <TagsInput  
+        initialTags={['first', 'second']}            
         categories={[
           {
             cssStyle: 'error',

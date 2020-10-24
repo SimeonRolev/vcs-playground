@@ -11,6 +11,16 @@ test('adds tag on enter key', () => {
     expect(screen.getByText('example')).toBeTruthy();
 });
 
+test('cannot add empty tag', () => {
+    render(<TagsInput onChange={() => {}}/>);
+    const input = screen.getByRole('textbox');
+    userEvent.type(input, '{enter}');
+    expect(screen.queryByText('x')).not.toBeInTheDocument();
+
+    userEvent.type(input, 'aa{backspace}{backspace}{enter}');
+    expect(screen.queryByText('x')).not.toBeInTheDocument();
+});
+
 test('adds tag on custom separator', () => {
     render(<TagsInput onChange={() => {}} separators={['Z']} />);
     const input = screen.getByRole('textbox');
@@ -28,7 +38,8 @@ test('focus input on click', () => {
     const input = screen.getByRole('textbox');
     expect(input).toHaveFocus();
 });
-test.only('add tag on blur (remove focus from input field)', () => {
+
+test('add tag on blur (remove focus from input field)', () => {
     render(<TagsInput onChange={() => {}}/>);
     const input = screen.getByRole('textbox');
     userEvent.type(input, 'example');
@@ -37,10 +48,21 @@ test.only('add tag on blur (remove focus from input field)', () => {
     expect(screen.getByText('example')).toBeTruthy();
 });
 
+test('loads inital tags', () => {
+    render(<TagsInput
+        initialTags={['first', 'second']}
+        onChange={() => {}}
+    />);
 
-test('removes tag on clicking x', () => {throw Error('not implemented');});
-test('loads category styles properly', () => {throw Error('not implemented');});
-test('calls onChange on add/delete tag', () => {throw Error('not implemented');});
-test('loads inital tags', () => {throw Error('not implemented');});
-test('backspace deletes prev item if input is empty', () => {throw Error('not implemented');});
+    expect(screen.getByText('first')).toBeTruthy();
+    expect(screen.getByText('second')).toBeTruthy();
+
+});
+
+
+// test('removes tag on clicking x', () => {throw Error('not implemented');});
+// test('loads category styles properly', () => {throw Error('not implemented');});
+// test('calls onChange on add/delete tag', () => {throw Error('not implemented');});
+// test('backspace deletes prev item if input is empty', () => {throw Error('not implemented');});
+// test('categorizing', () => {throw Error('not implemented');});
 
