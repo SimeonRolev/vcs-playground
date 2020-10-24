@@ -4,10 +4,7 @@ import { useFocus } from './hooks';
 
 export default TagsInput;
 
-function Tag ({ tag, onRemove }) {
-    const onClickRemove = () => {
-        onRemove(tag);
-    }
+function DefaultTag ({ tag, onRemove }) {
 
     const cssStyle = tag.category && tag.category.cssStyle;
 
@@ -21,13 +18,13 @@ function Tag ({ tag, onRemove }) {
             <span
                 role='button'
                 aria-label='Remove'
-                onClick={onClickRemove}
+                onClick={onRemove}
             >x</span>
         </div>
     )
 }
 
-Tag.propTypes = {
+DefaultTag.propTypes = {
     tag: PropTypes.instanceOf(CategorizedTag).isRequired,
     onRemove: PropTypes.func.isRequired
 }
@@ -52,7 +49,8 @@ function TagsInput ({
     onChange,
     initialTags=[],
     separators=['Enter', ',', ';'],
-    categories=[]
+    categories=[],
+    tagComponent=DefaultTag
 }) {
     const [tags, dispatch] = useReducer(tagsReducer, [])
     const [currentInput, setCurrentInput] = useState('');
@@ -124,16 +122,19 @@ function TagsInput ({
         }
     }
 
+    const TagComponent = tagComponent;
+    const onRemoveTag = (tag) => () => removeTag(tag)
+
     return (
         <div
             onClick={setInputFocus}
-            data-testid='tagsinput__wrapper'
             role='list'
+            className='tagsinput__wrapper'
         >
-            { tags.map(tag => <Tag
+            { tags.map(tag => <TagComponent
                 key={tag.text}
                 tag={tag}
-                onRemove={removeTag}
+                onRemove={onRemoveTag(tag)}
             />) }
             <input
                 ref={inputRef}
