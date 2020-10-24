@@ -1,64 +1,122 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, getQueriesForElement } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TagsInput from './TagsInput';
 
-test('adds tag on enter key', () => {
-    render(<TagsInput onChange={() => {}}/>);
-    const input = screen.getByRole('textbox');
-    userEvent.type(input, 'example{enter}');
+function getTagByText (tagText) {
+    return screen.getByRole('listitem', { name: tagText });
+}
 
-    expect(input.value).toBe('');
-    expect(screen.getByText('example')).toBeTruthy();
-});
+function verifyTagDeleted (tagText) {
+    const tag = screen.queryByRole('listitem', { name: tagText })
+    expect(tag).toBeNull();
+}
 
-test('cannot add empty tag', () => {
-    render(<TagsInput onChange={() => {}}/>);
-    const input = screen.getByRole('textbox');
-    userEvent.type(input, '{enter}');
-    expect(screen.queryByText('x')).not.toBeInTheDocument();
+function getInput () {
+    return screen.getByRole('textbox', { name: /insert tag/i});
+}
 
-    userEvent.type(input, 'aa{backspace}{backspace}{enter}');
-    expect(screen.queryByText('x')).not.toBeInTheDocument();
-});
+function queryCloseButtonForTag (tagText) {
+    const tag = getTagByText(tagText)
+    const tagQueries = getQueriesForElement(tag)
+    return tagQueries.getByRole('button', { name: 'Remove' } );
+}
 
-test('adds tag on custom separator', () => {
-    render(<TagsInput onChange={() => {}} separators={['Z']} />);
-    const input = screen.getByRole('textbox');
-    userEvent.type(input, 'exampleZ');
 
-    expect(input.value).toBe('');
-    expect(screen.getByText('example')).toBeTruthy();
-});
+const onChangeDefault = jest.fn(items => {})
+
+function setupTags(initialTags=[], onChange=onChangeDefault) {
+    return render(<TagsInput onChange={onChange} initialTags={initialTags} />)
+}
+
+describe('Add tag', () => {
+
+    test('adds tag on enter key', () => {
+        setupTags()
+        const input = getInput();
+        userEvent.type(input, 'example{enter}');
+        getTagByText('example');
+    });
+
+    test('clears input on add', () => {
+        setupTags()
+        const input = getInput();
+        userEvent.type(input, 'example{enter}');
+        expect(input.value).toBe('');
+    })
+    
+    test('cannot add empty tag', () => {
+        setupTags()
+        const input = getInput();
+        userEvent.type(input, '{enter}');
+        expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+        
+        userEvent.type(input, 'aa{backspace}{backspace}{enter}');
+        expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+    });
+    
+    test('adds tag on custom separator', () => {
+        render(<TagsInput onChange={() => {}} separators={['Z', '|']} />);
+        const input = getInput();
+        userEvent.type(input, 'firstZ');
+        getTagByText('first');
+        userEvent.type(input, 'second|');
+        getTagByText('second');
+    });
+    
+    test('add tag on blur (remove focus from input field)', () => {
+        setupTags()
+        const input = getInput();
+        userEvent.type(input, 'example');
+        fireEvent.blur(input);
+        
+        getTagByText('example')
+    });
+
+    test('loads inital tags', () => {
+        setupTags(['first', 'second'])
+
+        getTagByText('first')
+        getTagByText('second')
+    });
+})
+
+describe('Remove tag', () => {
+    test('on clicking x', () => {
+        setupTags(['first', 'second'])
+        const secondTagCloseButton = queryCloseButtonForTag('second')
+        userEvent.click(secondTagCloseButton)
+
+        getTagByText('first');
+        verifyTagDeleted('second');
+    })
+
+    test('on pressing Backspace', () => {
+        setupTags(['first', 'second'])
+        const input = getInput();
+        userEvent.type(input, '{backspace}');
+
+        getTagByText('first');
+        verifyTagDeleted('second');
+
+        userEvent.type(input, '{backspace}');
+        verifyTagDeleted('first');
+    })
+
+    test('backspace on no tags doesnt throw', () => {
+        setupTags();
+        const input = getInput();
+        userEvent.type(input, '{backspace}');
+    })
+})
 
 // Focusing
 test('focus input on click', () => {
-    render(<TagsInput onChange={() => {}}/>);
+    setupTags()
     
-    userEvent.click(screen.getByTestId('tagsinput__wrapper'));
-    const input = screen.getByRole('textbox');
+    userEvent.click(screen.getByRole('list'));
+    const input = getInput();
     expect(input).toHaveFocus();
 });
-
-test('add tag on blur (remove focus from input field)', () => {
-    render(<TagsInput onChange={() => {}}/>);
-    const input = screen.getByRole('textbox');
-    userEvent.type(input, 'example');
-    fireEvent.blur(input);
-    
-    expect(screen.getByText('example')).toBeTruthy();
-});
-
-test('loads inital tags', () => {
-    render(<TagsInput
-        initialTags={['first', 'second']}
-        onChange={() => {}}
-    />);
-
-    expect(screen.getByText('first')).toBeTruthy();
-    expect(screen.getByText('second')).toBeTruthy();
-
-});
-
 
 // test('removes tag on clicking x', () => {throw Error('not implemented');});
 // test('loads category styles properly', () => {throw Error('not implemented');});

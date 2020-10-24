@@ -6,15 +6,23 @@ export default TagsInput;
 
 function Tag ({ tag, onRemove }) {
     const onClickRemove = () => {
-        onRemove(tag.text);
+        onRemove(tag);
     }
 
     const cssStyle = tag.category && tag.category.cssStyle;
 
     return (
-        <div className={['tagsinput__tag', cssStyle].join(' ')}>
-            {tag.text}
-            <span onClick={onClickRemove}>x</span>
+        <div
+            className={['tagsinput__tag', cssStyle].join(' ')}
+            role='listitem'
+            aria-label={tag.text}
+        >
+            <span>{tag.text}</span>
+            <span
+                role='button'
+                aria-label='Remove'
+                onClick={onClickRemove}
+            >x</span>
         </div>
     )
 }
@@ -67,10 +75,10 @@ function TagsInput ({
         return new CategorizedTag(text, category)
     }
 
-    const removeTag = (text) => {
+    const removeTag = (tag) => {
         dispatch({
             type: 'remove',
-            text
+            tag
         });
     }
 
@@ -115,6 +123,7 @@ function TagsInput ({
         <div
             onClick={setInputFocus}
             data-testid='tagsinput__wrapper'
+            role='list'
         >
             { tags.map(tag => <Tag
                 key={tag.text}
@@ -127,6 +136,7 @@ function TagsInput ({
                 onChange={onInputChange}
                 onBlur={onBlur}
                 value={currentInput}
+                aria-label='insert tag'
             />
         </div>
     )
