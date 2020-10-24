@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TagsInput from './TagsInput';
 
@@ -8,7 +8,7 @@ test('adds tag on enter key', () => {
     userEvent.type(input, 'example{enter}');
 
     expect(input.value).toBe('');
-    expect(screen.getByText('example')).toBeTruthy()
+    expect(screen.getByText('example')).toBeTruthy();
 });
 
 test('adds tag on custom separator', () => {
@@ -17,13 +17,30 @@ test('adds tag on custom separator', () => {
     userEvent.type(input, 'exampleZ');
 
     expect(input.value).toBe('');
-    expect(screen.getByText('example')).toBeTruthy()
-})
+    expect(screen.getByText('example')).toBeTruthy();
+});
 
-test('removes tag on clicking x', () => {throw Error('not implemented')})
-test('loads category styles properly', () => {throw Error('not implemented')})
-test('calls onChange on add/delete tag', () => {throw Error('not implemented')})
-test('loads inital tags', () => {throw Error('not implemented')})
-test('focus input on click', () => {throw Error('not implemented')})
-test('add tag on blur (remove focus from input field)', () => {throw Error('not implemented')})
-test('backspace deletes prev item if input is empty', () => {throw Error('not implemented')})
+// Focusing
+test('focus input on click', () => {
+    render(<TagsInput onChange={() => {}}/>);
+    
+    userEvent.click(screen.getByTestId('tagsinput__wrapper'));
+    const input = screen.getByRole('textbox');
+    expect(input).toHaveFocus();
+});
+test.only('add tag on blur (remove focus from input field)', () => {
+    render(<TagsInput onChange={() => {}}/>);
+    const input = screen.getByRole('textbox');
+    userEvent.type(input, 'example');
+    fireEvent.blur(input);
+    
+    expect(screen.getByText('example')).toBeTruthy();
+});
+
+
+test('removes tag on clicking x', () => {throw Error('not implemented');});
+test('loads category styles properly', () => {throw Error('not implemented');});
+test('calls onChange on add/delete tag', () => {throw Error('not implemented');});
+test('loads inital tags', () => {throw Error('not implemented');});
+test('backspace deletes prev item if input is empty', () => {throw Error('not implemented');});
+

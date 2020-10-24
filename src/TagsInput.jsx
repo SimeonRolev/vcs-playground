@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from 'react'
 import PropTypes from 'prop-types'
+import { useFocus } from './hooks';
 
 export default TagsInput;
 
@@ -37,6 +38,8 @@ function TagsInput ({
     const [tags, setTags] = useState(initialTags)
     const [currentInput, setCurrentInput] = useState('');
 
+    const [inputRef, setInputFocus] = useFocus();
+
     useEffect(() => {
         initialTags.forEach(i => addTag(i))
     }, [initialTags]);  // eslint-disable-line
@@ -71,6 +74,10 @@ function TagsInput ({
         setCurrentInput(e.target.value);
     }
 
+    const onBlur = e => {
+        addTag(e.target.value);
+    }
+
     const onInputKeyPress = e => {
         if (separators.indexOf(e.key) > -1) {
             addTag(e.target.value);
@@ -85,15 +92,20 @@ function TagsInput ({
     }
 
     return (
-        <div>
+        <div
+            onClick={setInputFocus}
+            data-testid='tagsinput__wrapper'
+        >
             { tags.map(tag => <Tag
                 key={tag.text}
                 tag={tag}
                 onRemove={removeTag}
             />) }
             <input
+                ref={inputRef}
                 onKeyPress={onInputKeyPress}
                 onChange={onInputChange}
+                onBlur={onBlur}
                 value={currentInput}
             />
         </div>
