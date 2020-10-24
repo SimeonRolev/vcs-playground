@@ -130,8 +130,44 @@ test('focus input on click', () => {
 });
 
 describe('Categorizing tags', () => {
-    
+    test('categorizes initial tags', () => {
+        const WARNING_IGNORE_CASE_TEXT = 'First'
+        const NORMAL_TEXT = 'normal'
+        setupTags([
+            WARNING_IGNORE_CASE_TEXT, 
+            NORMAL_TEXT
+        ], {
+            categories: [
+                {
+                    name: 'TOO_LONG',
+                    predicate: str => str.length > 20,
+                    cssStyle: 'taginput__tag--error',
+                    message: 'This string is too long.',
+                },
+                {
+                    name: 'IGNORE_CASE',
+                    predicate: str => str.toLowerCase() !== str,
+                    cssStyle: 'taginput__tag--warning',
+                    message: 'Warning: case is ignored',
+                }
+            ]
+        })
+
+        const TOO_LONG_TEXT = 'toolongofastringisnotallowed'
+        const input = getInput();
+        userEvent.type(input, `${TOO_LONG_TEXT}{enter}`)
+
+        const warningTag = getTagByText(WARNING_IGNORE_CASE_TEXT)
+        warningTag.classList.contains('taginput__tag')
+        warningTag.classList.contains('taginput__tag--warning')
+
+        const errorTag = getTagByText(TOO_LONG_TEXT)
+        errorTag.classList.contains('taginput__tag--error')
+        errorTag.classList.contains('taginput__tag')
+
+        const normalTag = getTagByText(NORMAL_TEXT)
+        normalTag.classList.contains('taginput__tag')
+    })
 })
 
 // test('calls onChange on add/delete tag', () => {throw Error('not implemented');});
-// test('categorizing', () => {throw Error('not implemented');});
