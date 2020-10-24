@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useReducer} from 'react'
+import React, {useState, useEffect, useReducer, useRef} from 'react'
 import PropTypes from 'prop-types'
 import { useFocus } from './hooks';
 
@@ -63,7 +63,12 @@ function TagsInput ({
         initialTags.forEach(i => addTag(i))
     }, []);
 
+    const isFirstRun = useRef(true);
     useEffect(() => {
+        if (isFirstRun.current === true) {
+            isFirstRun.current = false;
+            return;
+        }
         onChange(tags)
     }, [tags, onChange]);
 
