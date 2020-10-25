@@ -34,52 +34,73 @@ function CategorizedTag (text, category) {
     this.category = category;
 }
 
-function insertBeforeIndex(array, index, elem) {
-    return [...array.slice(0, index), elem, ...array.slice(index)]
-}
-
-function removeBeforeIndex(array, index) {
-    if (index < 1) {
-        throw new Error('Tried to remove index lower than 0.')
+function insertAtIndex(array, index, elem) {
+    if (index === array.length) {
+        return array.concat(elem)
     }
-    return [...array.slice(0, index - 1), ...array.slice(index)]
+
+    return array.reduce((prev, curr, i) => {
+        return i === index
+            ? prev.concat([elem, curr])
+            : prev.concat(curr)
+    }, []);
 }
 
-function swapWithPreviousIndex(array, index) {
-    [array[index - 1], array[index]] = [array[index], array[index - 1]]
-    return array
+function removeAtIndex(array, index) {
+    return array.reduce((prev, curr, i) => {
+        return i === index
+            ? prev
+            : prev.concat(curr)
+    }, []);
 }
 
 const tagsReducer = function (state, action) {
-    const inputIndex = state.indexOf('_INPUT')
-    const stateCopy = [...state];
+    const { tags, inputIndex } = state;
 
-    if (new Set(state).size !== state.length) {
+    if (new Set(tags).size !== tags.length) {
         throw new Error('State has duplicated elements')
     }
 
     switch (action.type) {
         case 'add':
-            return insertBeforeIndex(state, inputIndex, action.tag)
+            return {
+                tags: insertAtIndex(tags, inputIndex, action.tag),
+                inputIndex: inputIndex + 1
+            }
         case 'remove':
             // Clicked X on some of the tags
             if (action.tag) {
-                return removeBeforeIndex(stateCopy, stateCopy.indexOf(action.tag) + 1)
+                const tagIndex = tags.indexOf(action.tag);
+                return {
+                    tags: removeAtIndex(tags, tagIndex),
+                    inputIndex: inputIndex > tagIndex
+                        ? inputIndex - 1
+                        : inputIndex
+                }
             } else {
                 // Backspace
                 if (inputIndex > 0) {
-                    return removeBeforeIndex(stateCopy, inputIndex)
+                    return {
+                        tags: removeAtIndex(tags, inputIndex - 1),
+                        inputIndex: inputIndex - 1
+                    }
                 }
             }
             return state
         case 'arrowLeft':
-            return inputIndex > 0
-                ? swapWithPreviousIndex(stateCopy, inputIndex)
-                : state
+            return {
+                tags,
+                inputIndex: inputIndex > 0
+                    ? inputIndex - 1
+                    : inputIndex
+            }
         case 'arrowRight':
-            return inputIndex < state.length - 1
-                ? swapWithPreviousIndex(stateCopy, inputIndex + 1)
-                : state
+            return {
+                tags,
+                inputIndex: inputIndex < tags.length
+                    ? inputIndex + 1
+                    : inputIndex
+            }
         default:
             throw new Error();
     }
@@ -92,7 +113,7 @@ function TagsInput ({
     categories=[],
     tagComponent=DefaultTag
 }) {
-    const [tags, dispatch] = useReducer(tagsReducer, ['_INPUT'])
+    const [tagsState, dispatch] = useReducer(tagsReducer, {tags: [], inputIndex: 0})
     const [currentInput, setCurrentInput] = useState('');
 
     const [inputRef, setInputFocus] = useFocus();
@@ -107,8 +128,8 @@ function TagsInput ({
             isFirstRun.current = false;
             return;
         }
-        onChange(tags)
-    }, [tags, onChange]);
+        onChange(tagsState.tags)
+    }, [tagsState, onChange]);
 
     const categorizeTag = text => {
         const category = categories.find(category => {
@@ -127,7 +148,7 @@ function TagsInput ({
 
     const addTag = (text) => {
         if (
-            !tags.find(tag => tag.text === text) &&
+            !tagsState.tags.find(tag => tag.text === text) &&
             !!text
         ) {
             dispatch({
@@ -176,15 +197,20 @@ function TagsInput ({
     const TagComponent = tagComponent;
     const onRemoveTag = (tag) => () => removeTag(tag)
 
+    const renderTag = (tag) =>< TagComponent
+        key={tag.text}
+        tag={tag}
+        onRemove={onRemoveTag(tag)}
+    />
+
     return (
         <div
             onClick={setInputFocus}
             role='list'
             className='tagsinput__wrapper'
         >
-            {tags.map(tag => {
-                return tag === '_INPUT'
-                ? <input
+            { tagsState.tags.slice(0, tagsState.inputIndex).map(tag => renderTag(tag)) }
+            <input
                     key={`tagsinpout__input`}
                     ref={inputRef}
                     onKeyDown={onInputKeyDown}
@@ -192,13 +218,8 @@ function TagsInput ({
                     onBlur={onBlur}
                     value={currentInput}
                     aria-label='insert tag'
-                />
-                : <TagComponent
-                    key={tag.text}
-                    tag={tag}
-                    onRemove={onRemoveTag(tag)}
-                />
-            })}
+            />
+            { tagsState.tags.slice(tagsState.inputIndex).map(tag => renderTag(tag)) }
         </div>
     )
 }

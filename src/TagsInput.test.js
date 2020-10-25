@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, getQueriesForElement, waitFor, wait, getAllByTitle } from '@testing-library/react';
+import { fireEvent, render, screen, getQueriesForElement, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TagsInput from './TagsInput';
 
@@ -108,6 +108,34 @@ describe('Remove tag', () => {
 
         getTagByText('first');
         verifyTagDeleted('second');
+    })
+
+    test('clicking x on a tag after the input, doesnt move input', () => {
+        setupTags(['first', 'second', 'third'])
+        const input = getInput();
+        fireEvent.keyDown(input, { key: 'ArrowLeft' })
+        fireEvent.keyDown(input, { key: 'ArrowLeft' })
+
+        userEvent.click(queryCloseButtonForTag('second'))
+        userEvent.click(queryCloseButtonForTag('third'))
+
+        userEvent.type(input, 'second{enter}')
+
+        assertTagsOrder(['first', 'second'])
+    })
+
+    test('clicking x on a tag before the input moves input one step back properly', () => {
+        setupTags(['first', 'second', 'third'])
+        const input = getInput();
+        fireEvent.keyDown(input, { key: 'ArrowLeft' })
+
+        userEvent.click(queryCloseButtonForTag('second'))
+        userEvent.click(queryCloseButtonForTag('first'))
+
+        userEvent.type(input, 'first{enter}')
+        userEvent.type(input, 'second{enter}')
+
+        assertTagsOrder(['first', 'second', 'third'])
     })
 
     test('on pressing Backspace', () => {
