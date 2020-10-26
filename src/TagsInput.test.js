@@ -304,7 +304,21 @@ describe('Callbacks', () => {
         )
 
         expect(onChangeDefault).toBeCalledTimes(2);
-    })    
+    })
+
+    test('Arrows dont trigger callbacks', () => {
+        setupTags(['first', 'second'])
+
+        const input = getInput()
+        fireEvent.keyDown(input, { key: 'ArrowLeft' })
+        fireEvent.keyDown(input, { key: 'ArrowLeft' })
+        fireEvent.keyDown(input, { key: 'ArrowLeft' })
+        fireEvent.keyDown(input, { key: 'ArrowRight' })
+        fireEvent.keyDown(input, { key: 'ArrowRight' })
+        fireEvent.keyDown(input, { key: 'ArrowRight' })
+
+        expect(onChangeDefault).toBeCalledTimes(2) // because of the initial renders only
+    })
 })
 
 function assertTagsOrder(properOrder) {
