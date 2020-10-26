@@ -211,7 +211,7 @@ function TagsInput ({
         >
             { tagsState.tags.slice(0, tagsState.inputIndex).map(tag => renderTag(tag)) }
             <input
-                    key={`tagsinpout__input`}
+                    key={`tagsinput__input`}
                     ref={inputRef}
                     onKeyDown={onInputKeyDown}
                     onChange={onInputChange}

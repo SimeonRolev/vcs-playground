@@ -1,5 +1,5 @@
-import logo from './logo.svg';
-import './App.css';
+// import './App.css';
+import './styles/tagsinput.scss';
 import TagsInput from './TagsInput';
 
 function App() {

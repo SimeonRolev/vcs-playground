@@ -1,0 +1,22 @@
+@import "mixins";
+@import "variables";
+
+.tagsinput__wrapper {
+    @include respond-to(tablet) {
+        background-color: blue;
+    }
+    @include respond-to(phone) {
+        background-color: green;
+    }
+
+    background-color: $text-color--primary;
+}
+
+.tagsinput__tag {
+    @include respond-to(phone) {
+        font-size: 13px;
+    }
+
+    background-color: white;
+    font-size: 20px;
+}
