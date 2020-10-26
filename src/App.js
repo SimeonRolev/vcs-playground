@@ -1,5 +1,6 @@
 // import './App.css';
-import './styles/tagsinput.scss';
+// import './styles/tagsinput.scss';
+import './styles/cssinjs.js'
 import TagsInput from './TagsInput';
 
 function App() {
