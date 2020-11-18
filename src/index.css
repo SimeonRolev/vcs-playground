@@ -27,3 +27,14 @@ code {
 .tagsinput__tag {
   
 }
+
+.progress-ls-item {
+  display: flex;
+  padding: 8px;
+}
+
+.attr, .name {
+  min-width: 70px;
+  padding: 20px;
+  border: 1px solid grey
+}

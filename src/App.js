@@ -1,24 +1,28 @@
 import logo from './logo.svg';
 import './App.css';
 import TagsInput from './TagsInput';
+import CopyJob from './copy-job/CopyJob';
 
 function App() {
   return (
     <div className="App">
 
-      <TagsInput  
-        initialTags={['first', 'second']}            
-        categories={[
+      <CopyJob
+        progressTrackerJob={{
+          update: function() {},
+          state: function() {},
+        }}
+        initialMessage={
           {
-            cssStyle: 'error',
-            category: 'TOO_LONG',
-            predicate: tag => tag.length > 20,
-            message: 'The tag is longer than 20 symbols'
+            'job': {
+                'uuid': 'uuid',
+                'state': 'INIT',
+                'progress': 0
+            }
           }
-        ]
-      }
-      onChange={items => console.log(items)}
+        }
       />
+
     </div>
   );
 }
