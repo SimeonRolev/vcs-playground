@@ -1,8 +1,9 @@
 import { act, fireEvent, render, screen, getQueriesForElement, waitFor } from '@testing-library/react';
 import CopyJob, {JobState, CopyJobProcess} from './CopyJob';
 
-import pushNotifier from './__mocks__/push-notifier';
-import progressTracker from './__mocks__/progress-tracker';
+import pushNotifier from './mocks/push-notifier';
+import progressTracker from './mocks/progress-tracker';
+import userEvent from '@testing-library/user-event';
 
 afterEach(() => {
     pushNotifier.subscribers = []
@@ -12,14 +13,14 @@ afterEach(() => {
 function addProgressTrackerJob (id='uuid') {
     const progressTrackerJob = {
         id,
-        update: jest.fn((isCompleted, percentComplete, status) => {})
+        update: jest.fn((percentComplete, status) => {})
     }
     
     progressTracker.add(progressTrackerJob)
     return progressTrackerJob;
 }
 
-function createMessage (overrides = {}) {
+function createMessageData (overrides = {}) {
     return {
         "job": {
             'uuid': 'uuid',
@@ -35,7 +36,7 @@ function postMessage (overrides = {} ) {
     act(() => {
         pushNotifier.post({
             event: null,
-            message: createMessage(overrides)
+            message: createMessageData(overrides)
         })
     })
 }
@@ -46,7 +47,7 @@ function renderCopyJob () {
     render(
         <CopyJob
             progressTrackerJob={job}
-            initialMessage={createMessage()}
+            initialMessage={createMessageData()}
         />)
 }
 
@@ -137,11 +138,66 @@ test('Updates the knockout job', () => {
 })
 
 test('Invalid messages dont break component', () => {
-    const invalidState = createMessage({state: "BANG"})
-    const invalidProgress = createMessage({state: "BANG"}) // 0 - 100
+    const invalidState = createMessageData({state: "BANG"})
+    const invalidProgress = createMessageData({state: "BANG"}) // 0 - 100
     throw new Error("Not implemented")
 })
 
-test('Error type of message creates information collapsible toggle', () => {
-    throw new Error("Not implemented")
+test('Finished job error type of message creates information collapsible toggle', async () => {
+    renderCopyJob()
+
+    expect(screen.queryByRole('button', {name: 'copy-job__errors_toggler'})).not.toBeInTheDocument()
+
+    postMessage({
+        state: 'DONE',
+        errors: [
+            'error/file.jpg',
+            'error/two/file.jpg'
+        ]
+    })
+
+    expect(await screen.findByText('error/file.jpg')).toBeInTheDocument()
+    expect(await screen.findByText('error/two/file.jpg')).toBeInTheDocument()
+
+    // Expect collapsible closed
+    const infoButton = await screen.findByRole('button', { name: /expand errors/i })
+    const exapandable = await screen.findByRole('alert', { name: /errors info/i })
+
+    function assertCollapsed() {
+        expect(infoButton).toHaveAttribute('aria-expanded', "false")
+        expect(infoButton).toHaveAttribute('aria-pressed', "false")
+        expect(exapandable).not.toHaveClass('expanded')
+    
+    }
+
+    function assertExpanded() {
+        expect(infoButton).toHaveAttribute('aria-expanded', 'true')
+        expect(infoButton).toHaveAttribute('aria-pressed', 'true')
+        expect(exapandable).toHaveClass('expanded')    
+    }
+
+    assertCollapsed()
+
+    userEvent.click(infoButton);
+    assertExpanded()
+
+    userEvent.click(infoButton);
+    assertCollapsed()
+})
+
+test('Integration test with the knockout copmonent', () => {
+    /*
+        Mock the .create method to create new element in the document
+
+        ReactDOM.render(<CopyJob />, node)
+        postMessage({state: JobState.DONE})
+        postMessage({state: JobState.FAILED})
+
+        progressTracker.clearFinished()
+
+        expect progressTrackerJob to not contain the job anymore.
+
+        Rely on knockout that the <copy-job> component will delete the div
+        and so will the React copmonent disappear - this will not be tested here
+    */
 })

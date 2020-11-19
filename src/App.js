@@ -1,27 +1,28 @@
-import logo from './logo.svg';
 import './App.css';
-import TagsInput from './TagsInput';
 import CopyJob from './copy-job/CopyJob';
+
+import progressTracker from './copy-job/mocks/progress-tracker'
 
 function App() {
   return (
     <div className="App">
 
-      <CopyJob
-        progressTrackerJob={{
-          update: function() {},
-          state: function() {},
-        }}
-        initialMessage={
-          {
-            'job': {
-                'uuid': 'uuid',
-                'state': 'INIT',
-                'progress': 0
+        <CopyJob
+          initialMessage={{
+            "job": {
+              "uuid": "uuid",
+              "state": "INIT",
+              "errors": [
+                'file.jpg',
+                'folder/file.jpg'
+              ]
             }
-          }
-        }
-      />
+          }}
+          progressTrackerJob={{
+            id: 'uuid',
+            update: () => {}
+          }}
+        ></CopyJob>
 
     </div>
   );

@@ -7,8 +7,8 @@ import PropTypes from 'prop-types';
 
 // import pushNotifier from '../base/push-notifier';
 // import { progressTracker } from '../progress/progress';
-import pushNotifier from './__mocks__/push-notifier';
-import progressTracker from './__mocks__/progress-tracker';
+import pushNotifier from './mocks/push-notifier';
+import progressTracker from './mocks/progress-tracker';
 
 const gettext = (val) => val;
 
@@ -45,24 +45,31 @@ const JobState = {
     }
 };
 
+function ErrorItem ({ error }) {
+    return <div>{error}</div>
+}
+
+ErrorItem.propTypes = {
+    error: PropTypes.string.isRequired
+}
+
 const CopyJobMessage = {
     fromData: data => ({
         size: data.job.size,
         progress: data.job.progress,
-        state: JobState[data.job.state]
+        state: JobState[data.job.state],
+        errors: data.job.errors || []
     })
 }
 
 function CopyJob ({ progressTrackerJob, initialMessage }) {
     const [message, setMessage] = useState(CopyJobMessage.fromData(initialMessage));
+    const [expanded, setExpanded] = useState(false)
 
     useEffect(() => {
         let mounted = true;
         pushNotifier.listen('job.copy', 'v2').subscribe(({ event, message }) => {
-            const jobId = message.job.uuid;
-            const messageJob = progressTracker.get(jobId);
-
-            if (jobId === progressTrackerJob.id) {
+            if (message.job.uuid === progressTrackerJob.id) {
                 if (mounted) {
                     handleMessage(message)
                 }
@@ -89,6 +96,21 @@ function CopyJob ({ progressTrackerJob, initialMessage }) {
         setMessage(msg);
     }
 
+    const expandJobErrors = () => {
+        setExpanded(!expanded)
+    }
+
+    const renderExpandableSection = () => {
+        return message.errors
+            ? <section
+                role="alert"
+                aria-label='errors info'
+                className={`expandable--vert ${expanded ? 'expanded' : ''}`}
+            >
+                { message.errors.map(error => <ErrorItem key={error} error={error} />) }
+            </section>
+            : null
+    }
 
     return (
         <div className='progress-ls-item progress-ls-file'>
@@ -102,18 +124,36 @@ function CopyJob ({ progressTrackerJob, initialMessage }) {
 
             <div className='attr attr-primary size' title={'size'}>{message.size}</div>
             <div className='attr attr-primary status' title={ 'status' }>
-                <span className='percent'>{ message.progress + '% ' }</span>
-                {message.state.icon ? <span className={message.state.icon} /> : null }
+                {
+                    message.state === JobState.PROGRESS
+                        ? <span className='percent'>{ message.progress + '% ' } </span>
+                        : null
+                }
+                {
+                    message.state.icon
+                        ? <span className={message.state.icon} />
+                        : null
+                }
                 <span className='status-text'>{message.state.text}</span>
             </div>
             <div className='attr attr-primary icon-column'>
                 <span className='icons-wrap'>
-                    {/* Icon view */}
-                    <span className='icon icon-status-additional-info' />
+                    {message.errors.length > 0
+                        ? <span
+                            role="button"
+                            aria-label="expand errors"
+                            aria-expanded={!!expanded}
+                            aria-pressed={!!expanded}
+                            className='icon icon-status-additional-info'
+                            onClick={expandJobErrors}
+                        >!!!</span>
+                        : null
+                    }
                 </span>
             </div>
 
             {/* <progress-bar params="value: item.percentComplete()"></progress-bar> */}
+            { renderExpandableSection() }
         </div>
     );
 };
@@ -131,11 +171,11 @@ CopyJob.propTypes = {
             'uuid': PropTypes.string.isRequired,
             'state': PropTypes.string.isRequired,
             'size': PropTypes.string,
-            'progress': PropTypes.number,
+            'progress': PropTypes.number.isRequired,
+            'errors': PropTypes.arrayOf(PropTypes.string)
         })
     })
 };
-
 
 function trackCopyFiles () {
     pushNotifier.listen('job.copy', 'v2').subscribe(({ event, data }) => {

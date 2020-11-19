@@ -38,3 +38,15 @@ code {
   padding: 20px;
   border: 1px solid grey
 }
+
+.expandable--vert {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+
+.expandable--vert.expanded {
+  max-height: 400px;
+  transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
