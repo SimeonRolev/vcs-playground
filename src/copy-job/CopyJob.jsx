@@ -177,64 +177,8 @@ CopyJob.propTypes = {
     })
 };
 
-function trackCopyFiles () {
-    pushNotifier.listen('job.copy', 'v2').subscribe(({ event, data }) => {
-        const jobId = data.job.uuid;
-        const job = progressTracker.get(jobId);
-        console.log(data);
-        if (!job) {
-            progressTracker.add(CopyJobProcess.create(data));
-        }
-    });
-}
-
-const ko = {
-    observable: (val) => () => val,
-    pureComputed: (callback) => callback()
-}
-
-const waitForNode = () => {}
-
-class CopyJobProcess {
-    static create (data) {
-        const job = new CopyJobProcess(data);
-
-        // waitForNode(
-        //     () => document.getElementById(job.nodeId),
-        //     node => {
-        //         ReactDOM.render(
-        //             <CopyJob
-        //                 progressTrackerJob={job}
-        //                 initialMessage={data}
-        //             />,
-        //             node
-        //         );
-        //     }
-        // );
-
-        return job;
-    }
-
-    constructor (data) {
-        this.type = 'job.copy'; // Required in the dialog-progress template
-        this.id = data.job.uuid; // Required by ProgressTracker
-        this.name = 'Copy shared items to my cloud'; // Sorting columns in the dialog need NAME
-        this.nodeId = 'copy-job-progress__' + this.id;
-
-        this.percentComplete = ko.observable(data.job.progress); // Global progress widget requires it
-        this.status = ko.observable(JobState[data.job.state]); // Global progress widget requires it (status().name === 'failed')
-        this.isCompleted = ko.pureComputed(() => this.status().completed);
-    }
-
-    update (percentComplete, state) {
-        this.percentComplete(percentComplete);
-        this.status(state);
-    }
-}
 
 export default CopyJob;
 export {
-    CopyJobProcess,
     JobState,
-    trackCopyFiles,
 };

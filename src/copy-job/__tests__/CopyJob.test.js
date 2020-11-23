@@ -1,45 +1,20 @@
-import { act, fireEvent, render, screen, getQueriesForElement, waitFor } from '@testing-library/react';
-import CopyJob, {JobState, CopyJobProcess} from './CopyJob';
+import { render, screen } from '@testing-library/react';
+import CopyJob, {JobState} from '../CopyJob';
 
-import pushNotifier from './mocks/push-notifier';
-import progressTracker from './mocks/progress-tracker';
+import pushNotifier from '../mocks/push-notifier';
+import progressTracker from '../mocks/progress-tracker';
 import userEvent from '@testing-library/user-event';
+
+import {
+    addProgressTrackerJob,
+    createMessageData,
+    postMessage
+} from './util'
 
 afterEach(() => {
     pushNotifier.subscribers = []
     progressTracker.items = []
 })
-
-function addProgressTrackerJob (id='uuid') {
-    const progressTrackerJob = {
-        id,
-        update: jest.fn((percentComplete, status) => {})
-    }
-    
-    progressTracker.add(progressTrackerJob)
-    return progressTrackerJob;
-}
-
-function createMessageData (overrides = {}) {
-    return {
-        "job": {
-            'uuid': 'uuid',
-            'state': 'INIT',
-            'size': '',
-            'progress': 0,
-            ...overrides
-        }
-    }
-}
-
-function postMessage (overrides = {} ) {
-    act(() => {
-        pushNotifier.post({
-            event: null,
-            message: createMessageData(overrides)
-        })
-    })
-}
 
 function renderCopyJob () {
     const job = addProgressTrackerJob()
@@ -131,10 +106,7 @@ test('Updates the knockout job', () => {
     })
 
     expect(progressTracker.get('uuid').update).toBeCalledTimes(1)
-    expect(progressTracker.get('uuid').update).toBeCalledWith(
-        50,
-        JobState.DONE    
-    )
+    expect(progressTracker.get('uuid').update).toBeCalledWith(50, JobState.DONE)
 })
 
 test('Invalid messages dont break component', () => {
@@ -167,7 +139,6 @@ test('Finished job error type of message creates information collapsible toggle'
         expect(infoButton).toHaveAttribute('aria-expanded', "false")
         expect(infoButton).toHaveAttribute('aria-pressed', "false")
         expect(exapandable).not.toHaveClass('expanded')
-    
     }
 
     function assertExpanded() {
