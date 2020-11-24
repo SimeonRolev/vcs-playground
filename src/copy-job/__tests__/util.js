@@ -1,4 +1,4 @@
-import { act, within } from '@testing-library/react';
+import { act, within, screen } from '@testing-library/react';
 
 import pushNotifier from '../mocks/push-notifier';
 import progressTracker from '../mocks/progress-tracker';
@@ -48,9 +48,11 @@ function createHTMLNode (id) {
 }
 
 async function assetReactJobContents (elem, sizeText, statusText) {
-    expect(await within(elem).findByTitle('name')).toHaveTextContent('Copy to my cloud')
-    expect(await within(elem).findByTitle('size')).toHaveTextContent(sizeText)
-    expect(await within(elem).findByTitle('status')).toHaveTextContent(statusText)
+    const root = elem ? within(elem) : screen;
+
+    expect(await root.findByTitle('name')).toHaveTextContent('Copy to my cloud')
+    expect(await root.findByTitle('size')).toHaveTextContent(sizeText)
+    expect(await root.findByTitle('status')).toHaveTextContent(statusText)
 }
 
 export {

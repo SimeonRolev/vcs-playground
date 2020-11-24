@@ -125,13 +125,13 @@ function CopyJob ({ progressTrackerJob, initialMessage }) {
             <div className='attr attr-primary size' title={'size'}>{message.size}</div>
             <div className='attr attr-primary status' title={ 'status' }>
                 {
-                    message.state === JobState.PROGRESS
-                        ? <span className='percent'>{ message.progress + '% ' } </span>
+                    message.state.icon
+                        ? <span className={message.state.icon} />
                         : null
                 }
                 {
-                    message.state.icon
-                        ? <span className={message.state.icon} />
+                    message.state === JobState.PROGRESS
+                        ? <span className='percent'>{ message.progress + '% ' } </span>
                         : null
                 }
                 <span className='status-text'>{message.state.text}</span>

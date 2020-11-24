@@ -7,6 +7,7 @@ import userEvent from '@testing-library/user-event';
 
 import {
     addProgressTrackerJob,
+    assetReactJobContents,
     createMessageData,
     postMessage
 } from './util'
@@ -32,78 +33,37 @@ test("Renders initial data properly", async () => {
     // TODO: Test "Percent" shouldnt always appear
     // TODO: Test icon rendered properly
     // TODO: Test JobState icon loaded properly / if icon: false -> no icon in the state column
-
-    expect(await screen.findByTitle('name')).toHaveTextContent('Copy to my cloud')
-    expect(await screen.findByTitle('size')).toHaveTextContent('')
-    expect(await screen.findByTitle('status')).toHaveTextContent('Initializing')
+    await assetReactJobContents(null, '', 'Initializing')
 });
 
 test("Updates data from pushNotifications", async () => {
     renderCopyJob()
 
-    postMessage({
-        state: 'PREPARE',
-        size: '250kb',
-    })
+    postMessage({ state: 'PREPARE', size: '250kb' })
+    await assetReactJobContents(null, '250kb', 'Preparing')
 
-    expect(await screen.findByTitle('name')).toHaveTextContent('Copy to my cloud')
-    expect(await screen.findByTitle('size')).toHaveTextContent('250kb')
-    expect(await screen.findByTitle('status')).toHaveTextContent('Preparing')
+    postMessage({ state: 'PROGRESS', size: '250kb', progress: 50 })
+    await assetReactJobContents(null, '250kb', '50% Downloading ...')
 
-    postMessage({
-        state: 'PROGRESS',
-        size: '250kb',
-        progress: 50
-    })
-
-    expect(await screen.findByTitle('name')).toHaveTextContent('Copy to my cloud')
-    expect(await screen.findByTitle('size')).toHaveTextContent('250kb')
-    expect(await screen.findByTitle('status')).toHaveTextContent('50% Downloading ...')
-
-    postMessage({
-        state: 'DONE',
-        size: '250kb',
-        progress: 100
-    })
-
-    expect(await screen.findByTitle('name')).toHaveTextContent('Copy to my cloud')
-    expect(await screen.findByTitle('size')).toHaveTextContent('250kb')
-    expect(await screen.findByTitle('status')).toHaveTextContent('Done')
+    postMessage({ state: 'DONE', size: '250kb', progress: 100 })
+    await assetReactJobContents(null, '250kb', 'Done')
 })
 
 test('Messages with different ID dont get handled', async () => {
     renderCopyJob()
 
     // This message should be ignored since it's ID is not the proper one
-    postMessage({
-        uuid: 'uuid-another',
-        state: 'DONE',
-        size: '250kb',
-        progress: 100
-    })
+    postMessage({ uuid: 'uuid-another', state: 'DONE', size: '250kb', progress: 100 })
+    await assetReactJobContents(null, '', JobState.INIT.text)
 
-    expect(await screen.findByTitle('size')).toHaveTextContent('')
-    expect(await screen.findByTitle('status')).toHaveTextContent(JobState.INIT.text)
-
-    postMessage({
-        uuid: 'uuid',
-        state: 'DONE',
-        size: '250kb',
-        progress: 100
-    })
-
-    expect(await screen.findByTitle('size')).toHaveTextContent('250kb')
-    expect(await screen.findByTitle('status')).toHaveTextContent(JobState.DONE.text)
+    postMessage({ uuid: 'uuid', state: 'DONE', size: '250kb', progress: 100 })
+    await assetReactJobContents(null, '250kb', JobState.DONE.text)
 })
 
 test('Updates the knockout job', () => {
     renderCopyJob()
 
-    postMessage({
-        state: 'DONE',
-        size: '250kb',
-        progress: 50
-    })
+    postMessage({ state: 'DONE', size: '250kb', progress: 50 })
 
     expect(progressTracker.get('uuid').update).toBeCalledTimes(1)
     expect(progressTracker.get('uuid').update).toBeCalledWith(50, JobState.DONE)
